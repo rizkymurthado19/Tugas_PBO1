@@ -1,6 +1,9 @@
 package frame;
 
+import helpers.JasperDataSourceBuilder;
 import helpers.Koneksi;
+import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.view.JasperViewer;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -121,6 +124,44 @@ public class PakaianViewFrame extends JFrame{
                 }
             }
         });
+
+        cetakButton.addActionListener(e -> {
+            Connection c = Koneksi.getConnection();
+            String selectSQL = "SELECT * FROM pakaian";
+            Object[][] row;
+            try {
+                Statement s = c.createStatement(
+                        ResultSet.TYPE_SCROLL_SENSITIVE,
+                        ResultSet.CONCUR_UPDATABLE);
+                ResultSet rs = s.executeQuery(selectSQL);
+                rs.last();
+                int jumlah = rs.getRow();
+                row = new Object[jumlah][4];
+                int i = 0;
+                rs.beforeFirst();
+                while (rs.next()){
+                    row[i][0] = rs.getInt("id");
+                    row[i][1] = rs.getString("merk");
+                    row[i][2] = rs.getString("warna");
+                    row[i][3] = rs.getString("jenis");
+                    i++;
+                }
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            try {
+                JasperReport jasperReport = JasperCompileManager.compileReport("/D:/Kuliah/Kuliah S4/PBO " +
+                        "1/Tugas/Tugas_PBO1/src/main/resources/pakaian_reports.jrxml");
+                                JasperPrint jasperPrint =
+                                        JasperFillManager.fillReport(jasperReport,null, new
+                                                JasperDataSourceBuilder(row));
+                JasperViewer viewer = new JasperViewer(jasperPrint, false);
+                viewer.setVisible(true);
+            } catch (JRException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
 
         isiTable();
         init();
